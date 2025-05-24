@@ -21,7 +21,7 @@ function ChatMessage({ message }) {
         <div className="message-text">{text}</div>
         {showSources && (
           <div className="message-sources">
-            <strong>Sources:</strong>
+            <strong>情報源:</strong>
             <ul>
               {sources.map((source, index) => (
                 <li key={index}>

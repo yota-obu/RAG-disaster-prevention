@@ -10,15 +10,15 @@ from langchain.schema.runnable import RunnablePassthrough, RunnableParallel
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.document import Document # Added for type hinting and clarity
 
-# Load environment variables (for GOOGLE_API_KEY)
-# Construct the path to the .env file relative to this script's location
-# __file__ is .../backend/app/rag_logic.py
-# .env is in .../backend/.env
+# 環境変数 (GOOGLE_API_KEY用) の読み込み
+# このスクリプトの場所からの相対パスで .env ファイルへのパスを構築
+# __file__ は .../backend/app/rag_logic.py
+# .env は .../backend/.env
 dotenv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.env'))
 load_dotenv(dotenv_path=dotenv_path)
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-# Construct paths relative to this file's location
+# このファイルの場所からの相対パスを構築
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 BACKEND_DIR = os.path.dirname(CURRENT_DIR)
 ROOT_DIR = os.path.dirname(BACKEND_DIR)
@@ -30,144 +30,144 @@ VECTORSTORE_PATH = os.path.join(BACKEND_DIR, 'vectorstore_faiss')
 llm = None
 embeddings = None
 vector_store = None
-is_initialized = False
+is_initialized = False # 初期化済みフラグ
 
 def initialize_rag_components():
     global llm, embeddings, vector_store, is_initialized
     
     if is_initialized:
-        print("RAG components already initialized.")
+        print("RAGコンポーネントは既に初期化されています。")
         return
 
-    print("Initializing RAG components...")
+    print("RAGコンポーネントを初期化しています...")
     if not GOOGLE_API_KEY or GOOGLE_API_KEY == "YOUR_API_KEY_HERE":
-        print("WARNING: GOOGLE_API_KEY not found or is a placeholder. RAG system will not function correctly.")
-        # We can let it proceed to allow app to start, but queries will fail.
-        # Or raise ValueError("GOOGLE_API_KEY not found or is a placeholder in environment variables.")
+        print("警告: GOOGLE_API_KEYが見つからないか、プレースホルダーのままです。RAGシステムは正常に機能しません。")
+        # アプリの起動を許可するために続行するが、クエリは失敗する
+        # または ValueError("GOOGLE_API_KEYが環境変数に見つからないか、プレースホルダーのままです。") を発生させる
     
     try:
         llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash-latest", google_api_key=GOOGLE_API_KEY, temperature=0.7)
         embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=GOOGLE_API_KEY)
     except Exception as e:
-        print(f"Error initializing Google AI components: {e}")
-        print("Please ensure your GOOGLE_API_KEY is valid and has the Gemini API enabled.")
-        # Not raising an error here to allow the rest of the app to potentially work,
-        # but RAG queries will fail.
-        is_initialized = False # Mark as not successfully initialized
+        print(f"Google AIコンポーネントの初期化中にエラー: {e}")
+        print("GOOGLE_API_KEYが有効で、Gemini APIが有効になっていることを確認してください。")
+        # アプリの他の部分が動作する可能性を残すためにここではエラーを発生させない
+        # ただし、RAGクエリは失敗する
+        is_initialized = False # 正常に初期化されなかったことを示す
         return
 
 
     if os.path.exists(VECTORSTORE_PATH):
-        print(f"Loading existing vector store from {VECTORSTORE_PATH}")
+        print(f"既存のベクターストアを {VECTORSTORE_PATH} から読み込んでいます。")
         try:
             vector_store = FAISS.load_local(VECTORSTORE_PATH, embeddings, allow_dangerous_deserialization=True)
-            print("Vector store loaded successfully.")
+            print("ベクターストアの読み込みに成功しました。")
         except Exception as e:
-            print(f"Error loading vector store: {e}. Re-creating...")
-            os.rmdir(VECTORSTORE_PATH) # Remove potentially corrupted store
-            vector_store = None # Ensure it's reset
-            # Proceed to create new one
+            print(f"ベクターストアの読み込みエラー: {e}。再作成します...")
+            os.rmdir(VECTORSTORE_PATH) # 破損している可能性のあるストアを削除
+            vector_store = None # リセットを確実にする
+            # 新規作成に進む
     
-    if not vector_store: # If not loaded or loading failed
-        print(f"Creating new vector store. Loading documents from: {DOCUMENTS_PATH}")
+    if not vector_store: # 読み込まれなかった場合、または読み込みに失敗した場合
+        print(f"新しいベクターストアを作成しています。ドキュメントを {DOCUMENTS_PATH} から読み込んでいます。")
         if not os.path.exists(DOCUMENTS_PATH):
-            os.makedirs(DOCUMENTS_PATH) # Create documents directory if it doesn't exist
-            print(f"Created documents directory at {DOCUMENTS_PATH}")
+            os.makedirs(DOCUMENTS_PATH) # ドキュメントディレクトリが存在しない場合は作成
+            print(f"{DOCUMENTS_PATH} にドキュメントディレクトリを作成しました。")
             
         if not os.listdir(DOCUMENTS_PATH):
-            print(f"No documents found in {DOCUMENTS_PATH}. RAG will have no knowledge from PDFs.")
+            print(f"{DOCUMENTS_PATH} にドキュメントが見つかりません。RAGはPDFからの知識ベースを持ちません。")
             docs = []
         else:
-            print(f"Loading PDFs from {DOCUMENTS_PATH}...")
+            print(f"{DOCUMENTS_PATH} からPDFを読み込んでいます...")
             loader = PyPDFDirectoryLoader(DOCUMENTS_PATH)
             try:
-                loaded_pages = loader.load() # Each item in loaded_pages is a Document representing a page
+                loaded_pages = loader.load() # loaded_pages の各アイテムはページを表す Document
             except Exception as e:
-                print(f"Error loading PDFs: {e}")
+                print(f"PDFの読み込みエラー: {e}")
                 loaded_pages = []
             
             docs = []
             for page_doc in loaded_pages:
-                # PyPDFDirectoryLoader adds 'source' (full path) and 'page' (0-indexed)
+                # PyPDFDirectoryLoader は 'source' (フルパス) と 'page' (0から始まる) を追加する
                 filename = os.path.basename(page_doc.metadata.get('source', 'Unknown Document'))
-                page_number = page_doc.metadata.get('page', 0) + 1 # Convert to 1-indexed
+                page_number = page_doc.metadata.get('page', 0) + 1 # 1から始まるように変換
                 
                 page_doc.metadata['filename'] = filename
                 page_doc.metadata['page'] = page_number
                 docs.append(page_doc)
         
-        print(f"Loaded {len(docs)} pages from PDF documents.")
+        print(f"PDFドキュメントから {len(docs)} ページを読み込みました。")
         if docs:
             try:
                 vector_store = FAISS.from_documents(docs, embeddings)
                 vector_store.save_local(VECTORSTORE_PATH)
-                print(f"Vector store created and saved to {VECTORSTORE_PATH}")
+                print(f"ベクターストアを作成し、{VECTORSTORE_PATH} に保存しました。")
             except Exception as e:
-                print(f"Error creating or saving FAISS vector store: {e}")
-                vector_store = None # Ensure vector_store is None if creation fails
+                print(f"FAISSベクターストアの作成または保存エラー: {e}")
+                vector_store = None # 作成失敗時は vector_store を None にする
         else:
-            # If no documents, we need an empty vector store to avoid errors in as_retriever()
-            # Create a FAISS index with a dummy document and then clear it, or handle query time.
-            # For now, let's create an empty one if possible, or it remains None.
-            # FAISS.from_documents requires at least one document.
-            # A more robust solution might be to have a flag or return specific message if no docs.
-            print("No documents loaded, vector store is empty or not created.")
-            # To allow vector_store.as_retriever() later, we might need to initialize it with a dummy entry.
-            # However, if embeddings are not available (e.g. API key issue), this will also fail.
+            # ドキュメントがない場合、as_retriever() でのエラーを避けるために空のベクターストアが必要
+            # ダミードキュメントでFAISSインデックスを作成し、クリアするか、クエリ時に処理する
+            # 現在は、可能であれば空のものを作成するか、None のままにする
+            # FAISS.from_documents は少なくとも1つのドキュメントを必要とする
+            # より堅牢な解決策は、フラグを持つか、ドキュメントがない場合に特定のメッセージを返すこと
+            print("ドキュメントが読み込まれなかったため、ベクターストアは空か作成されていません。")
+            # 後で vector_store.as_retriever() を許可するために、ダミーエントリで初期化する必要があるかもしれない
+            # ただし、埋め込みが利用できない場合 (APIキーの問題など)、これも失敗する
             if embeddings:
                 try:
                     dummy_doc = [Document(page_content="dummy", metadata={"filename":"dummy.txt", "page":0})]
                     vector_store = FAISS.from_documents(dummy_doc, embeddings)
-                    # This dummy store should ideally not be saved or be cleared.
-                    # For this implementation, query_rag will check for 'dummy' and handle it.
-                    print("Created a dummy vector store as no documents were found.")
+                    # このダミーストアは理想的には保存しないか、クリアするべき
+                    # この実装では、query_rag が 'dummy' をチェックして処理する
+                    print("ドキュメントが見つからなかったため、ダミーのベクターストアを作成しました。")
                 except Exception as e:
-                    print(f"Could not create dummy vector store: {e}")
-                    vector_store = None # Explicitly set to None
+                    print(f"ダミーベクターストアを作成できませんでした: {e}")
+                    vector_store = None # 明示的に None に設定
             else:
                 vector_store = None
 
 
     is_initialized = True
-    print("RAG components initialization finished.")
+    print("RAGコンポーネントの初期化が完了しました。")
 
 
-# Call initialization once when the module is loaded.
-# Errors during initialization are printed but don't stop the app from starting.
-# Query functions should check if components are ready.
+# モジュール読み込み時に一度初期化を呼び出す
+# 初期化中のエラーは表示されるが、アプリの起動は停止しない
+# クエリ関数はコンポーネントが準備できているか確認すべき
 initialize_rag_components()
 
 def format_docs_for_prompt(docs: list[Document]) -> str:
     if not docs or (len(docs) == 1 and docs[0].metadata.get('filename') == 'dummy.txt'):
-        return "No relevant context found in the documents."
+        return "ドキュメント内に関連する情報が見つかりませんでした。"
     return "\n\n".join(f"Source: {doc.metadata.get('filename', 'N/A')}, Page: {doc.metadata.get('page', 'N/A')}\nContent: {doc.page_content}" for doc in docs)
 
 def query_rag(question: str) -> dict:
     global llm, vector_store, is_initialized
 
     if not is_initialized:
-        return {"answer": "RAG system is not initialized. Please check server logs.", "sources": []}
+        return {"answer": "RAGシステムが初期化されていません。サーバーログを確認してください。", "sources": []}
     if not llm:
-        return {"answer": "LLM not available. Please check API key and server logs.", "sources": []}
+        return {"answer": "LLMが利用できません。APIキーとサーバーログを確認してください。", "sources": []}
     if not vector_store:
-        return {"answer": "Vector store not available. No documents loaded or error during initialization.", "sources": []}
+        return {"answer": "ベクターストアが利用できません。ドキュメントが読み込まれていないか、初期化中にエラーが発生しました。", "sources": []}
 
     try:
         retriever = vector_store.as_retriever(search_kwargs={"k": 3})
     except Exception as e:
-        # This can happen if vector_store is FAISS but empty in a way that as_retriever fails.
-        print(f"Error creating retriever: {e}")
-        return {"answer": "Could not create document retriever. Vector store might be empty or corrupted.", "sources": []}
+        # vector_store が FAISS だが、as_retriever が失敗する方法で空の場合に発生する可能性がある
+        print(f"リトリーバーの作成エラー: {e}")
+        return {"answer": "ドキュメントリトリーバーを作成できませんでした。ベクターストアが空か破損している可能性があります。", "sources": []}
 
-    template = """Answer the question based only on the following context:
+    template = """以下のコンテキストのみに基づいて質問に答えてください:
     {context}
 
-    If the context is empty or says 'No relevant context found', state that you don't have enough information from the documents.
-    Do not use any external knowledge.
+    コンテキストが空か「関連する情報が見つかりませんでした」と表示されている場合は、ドキュメントから十分な情報が得られなかったと述べてください。
+    外部の知識は使用しないでください。
 
-    Question: {question}
+    質問: {question}
 
-    Answer:
+    回答:
     """
     prompt = PromptTemplate.from_template(template)
 
@@ -184,19 +184,19 @@ def query_rag(question: str) -> dict:
     try:
         answer = rag_chain.invoke(question)
     except Exception as e:
-        print(f"Error during RAG chain invocation: {e}")
-        # Check if it's an API key issue with Gemini
+        print(f"RAGチェーンの実行中にエラー: {e}")
+        # Gemini の API キーの問題かどうかを確認
         if "API key not valid" in str(e) or "PERMISSION_DENIED" in str(e):
-             return {"answer": "Could not connect to the AI service. Please check the GOOGLE_API_KEY.", "sources": []}
-        return {"answer": "An error occurred while generating the answer.", "sources": []}
+             return {"answer": "AIサービスに接続できませんでした。GOOGLE_API_KEYを確認してください。", "sources": []}
+        return {"answer": "回答の生成中にエラーが発生しました。", "sources": []}
     
-    # Retrieve documents again to ensure we have the correct metadata for sources
+    # 情報源の正しいメタデータを確保するためにドキュメントを再度取得
     try:
         retrieved_docs = retriever.get_relevant_documents(question)
-        # Filter out the dummy document if it was used
+        # ダミードキュメントが使用された場合は除外
         actual_retrieved_docs = [doc for doc in retrieved_docs if doc.metadata.get('filename') != 'dummy.txt']
     except Exception as e:
-        print(f"Error retrieving documents for sources: {e}")
+        print(f"情報源のドキュメント取得エラー: {e}")
         actual_retrieved_docs = []
 
     sources = []
@@ -209,36 +209,36 @@ def query_rag(question: str) -> dict:
             
     return {"answer": answer, "sources": sources}
 
-# Example usage (for testing)
+# 使用例 (テスト用)
 if __name__ == '__main__':
-    print("Testing RAG logic...")
+    print("RAGロジックのテスト中...")
     if not GOOGLE_API_KEY or GOOGLE_API_KEY == "YOUR_API_KEY_HERE":
-        print("Skipping test: GOOGLE_API_KEY is not set or is a placeholder.")
+        print("テストをスキップ: GOOGLE_API_KEY が設定されていないか、プレースホルダーです。")
     elif not is_initialized or not llm or not vector_store:
-        print("Skipping test: RAG components not fully initialized.")
+        print("テストをスキップ: RAGコンポーネントが完全に初期化されていません。")
     else:
-        # Create a dummy PDF if none exists for testing
+        # テスト用に存在しない場合はダミーPDFを作成
         if not os.listdir(DOCUMENTS_PATH):
-            print(f"No documents in {DOCUMENTS_PATH}. Consider adding a test PDF.")
+            print(f"{DOCUMENTS_PATH} にドキュメントがありません。テストPDFの追加を検討してください。")
             # test_pdf_path = os.path.join(DOCUMENTS_PATH, "test_doc.pdf")
-            # with open(test_pdf_path, "w") as f: # This will not be a valid PDF
-            #     f.write("This is a test document about safety during earthquakes.")
-            # print(f"Created a dummy text file named test_doc.pdf for testing. PyPDFLoader might not parse it.")
-            # print("Please re-run initialize_rag_components() or restart the script if you added files manually.")
+            # with open(test_pdf_path, "w") as f: # これは有効なPDFにはなりません
+            #     f.write("これは地震時の安全に関するテストドキュメントです。")
+            # print(f"テスト用に test_doc.pdf という名前のダミーテキストファイルを作成しました。PyPDFLoader はこれを解析できないかもしれません。")
+            # print("ファイルを手動で追加した場合は、initialize_rag_components() を再実行するか、スクリプトを再起動してください。")
         
-        # Re-initialize to pick up any new files if added manually for testing
-        # initialize_rag_components() # This might be redundant if module load already did it.
+        # テスト用に手動でファイルを追加した場合に新しいファイルを取得するために再初期化
+        # initialize_rag_components() # モジュールのロードで既に実行されている場合は冗長かもしれない
 
-        test_question = "What should I do during an earthquake?"
-        print(f"\nQuerying with: '{test_question}'")
+        test_question = "地震の時はどうすればいいですか？"
+        print(f"\n問い合わせ内容: '{test_question}'")
         response = query_rag(test_question)
-        print("\nResponse:")
-        print(f"  Answer: {response['answer']}")
-        print(f"  Sources: {response['sources']}")
+        print("\n応答:")
+        print(f"  回答: {response['answer']}")
+        print(f"  情報源: {response['sources']}")
 
-        test_question_no_context = "What is the capital of France?"
-        print(f"\nQuerying with: '{test_question_no_context}' (expected no relevant context)")
+        test_question_no_context = "フランスの首都は？"
+        print(f"\n問い合わせ内容: '{test_question_no_context}' (関連コンテキストなしを想定)")
         response_no_context = query_rag(test_question_no_context)
-        print("\nResponse (no context):")
-        print(f"  Answer: {response_no_context['answer']}")
-        print(f"  Sources: {response_no_context['sources']}")
+        print("\n応答 (コンテキストなし):")
+        print(f"  回答: {response_no_context['answer']}")
+        print(f"  情報源: {response_no_context['sources']}")

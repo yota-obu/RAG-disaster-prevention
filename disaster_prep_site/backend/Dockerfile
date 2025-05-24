@@ -1,30 +1,30 @@
-# Use an official Python runtime as a parent image
+# 公式のPythonランタイムを親イメージとして使用
 FROM python:3.9-slim
 
-# Set the working directory in the container
+# コンテナ内の作業ディレクトリを設定
 WORKDIR /app
 
-# Copy the requirements file into the container at /app
+# requirementsファイルをコンテナの /app にコピー
 COPY requirements.txt .
 
-# Install any needed packages specified in requirements.txt
+# requirements.txt で指定された必要なパッケージをインストール
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the .env file. Make sure it's present during build or handled appropriately.
+# .env ファイルをコピー。ビルド時に存在するか、適切に処理されることを確認
 COPY .env .
 
-# Copy the rest of the application code from your backend directory into the /app directory
+# バックエンドディレクトリから残りのアプリケーションコードを /app ディレクトリにコピー
 COPY ./app ./app
-COPY ./documents ./documents # Also copy documents folder if RAG needs it at runtime
-COPY ./vectorstore_faiss ./vectorstore_faiss # Copy existing vector store if pre-built
+COPY ./documents ./documents # RAGがランタイムに必要とする場合は documents フォルダもコピー
+COPY ./vectorstore_faiss ./vectorstore_faiss # 事前にビルドされた場合は既存のベクターストアをコピー
 
-# Make port 5001 available to the world outside this container
+# このコンテナの外部にポート5001を公開
 EXPOSE 5001
 
-# Define environment variables (if not using .env or want to override)
+# 環境変数を定義 ( .env を使用しない場合や上書きしたい場合)
 # ENV GOOGLE_API_KEY your_api_key_here 
 
-# Run main.py when the container launches
-# The command in main.py is app.run(host='0.0.0.0', port=5001)
-# If main.py is in app/main.py and app is a package:
+# コンテナ起動時に main.py を実行
+# main.py 内のコマンドは app.run(host='0.0.0.0', port=5001)
+# main.py が app/main.py にあり、app がパッケージの場合:
 CMD ["python", "-m", "app.main"]

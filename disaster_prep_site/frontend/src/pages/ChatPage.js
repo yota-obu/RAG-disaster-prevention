@@ -56,13 +56,19 @@ function ChatPage() {
       setMessages(prevMessages => [...prevMessages, aiMessage]);
 
     } catch (error) {
-      const errorMessageText = error.message || 'Failed to get response from AI.';
-      // Check if the error message from backend is already prefixed, if not, add "Error: "
-      const displayMessage = errorMessageText.toLowerCase().startsWith("error:") ? errorMessageText : `Error: ${errorMessageText}`;
+      let errorMessageText = error.message || 'AIからの応答の取得に失敗しました。';
+      // Check if the error message from backend is already prefixed with "Error: " or "エラー: "
+      // If not, add the Japanese prefix.
+      if (!errorMessageText.toLowerCase().startsWith("error:") && !errorMessageText.startsWith("エラー:")) {
+        errorMessageText = `エラー: ${errorMessageText}`;
+      } else if (errorMessageText.toLowerCase().startsWith("error:")) {
+        // Replace English "Error: " with Japanese "エラー: "
+        errorMessageText = `エラー: ${errorMessageText.substring(7)}`;
+      }
       
       const errorMessage = {
         id: Date.now() + 1, // Ensure unique ID
-        text: displayMessage,
+        text: errorMessageText, // Use the potentially modified errorMessageText
         sender: 'error', 
         sources: []
       };

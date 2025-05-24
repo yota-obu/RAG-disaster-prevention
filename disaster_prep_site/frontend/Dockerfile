@@ -1,37 +1,37 @@
-# Stage 1: Build the React application
+# ステージ1: Reactアプリケーションのビルド
 FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package.json and package-lock.json (if available)
-# If package-lock.json is not consistently present, only copy package.json
-# However, it's best practice to commit and use a lock file.
+# package.json と package-lock.json (利用可能な場合) をコピー
+# package-lock.json が一貫して存在しない場合は、package.json のみをコピー
+# ただし、ロックファイルをコミットして使用するのがベストプラクティス
 COPY package.json package-lock.json* ./
-# If you use yarn, you would copy yarn.lock instead of package-lock.json*
+# yarn を使用する場合は、package-lock.json* の代わりに yarn.lock をコピー
 
-# Install dependencies
+# 依存関係のインストール
 RUN npm install
-# If using yarn: RUN yarn install
+# yarn を使用する場合: RUN yarn install
 
-# Copy the rest of the application code
+# 残りのアプリケーションコードをコピー
 COPY . .
 
-# Build the React application
+# Reactアプリケーションをビルド
 RUN npm run build
-# If using yarn: RUN yarn build
+# yarn を使用する場合: RUN yarn build
 
-# Stage 2: Serve the application with Nginx
+# ステージ2: Nginxでアプリケーションを提供
 FROM nginx:alpine
 
-# Copy custom Nginx configuration
-# This replaces the default Nginx configuration.
+# カスタムNginx設定をコピー
+# これにより、デフォルトのNginx設定が置き換えられる
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy the build output from the builder stage to Nginx's web root directory
+# ビルダー段階からのビルド出力をNginxのウェブルートディレクトリにコピー
 COPY --from=builder /app/build /usr/share/nginx/html
 
-# Expose port 80 (default Nginx port)
+# ポート80を公開 (Nginxのデフォルトポート)
 EXPOSE 80
 
-# Start Nginx in the foreground
+# Nginxをフォアグラウンドで起動
 CMD ["nginx", "-g", "daemon off;"]

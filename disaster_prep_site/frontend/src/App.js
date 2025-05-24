@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import StockpileSimulatorPage from './pages/StockpileSimulatorPage';
 import ChatPage from './pages/ChatPage';
-import './App.css'; // Optional: for basic styling
+import './App.css'; // オプション: 基本的なスタイリング用
 
 function App() {
   return (

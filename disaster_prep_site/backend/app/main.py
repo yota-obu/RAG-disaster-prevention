@@ -10,99 +10,95 @@ initialize_rag_components()
 import csv
 import os
 
-# Basic chat processing state
+# チャット処理中フラグ
 is_processing_chat = False
 
-# AGE_CATEGORIES defines the keys for quantity_per_person_per_day
+# AGE_CATEGORIES は quantity_per_person_per_day のキーを定義します
 AGE_CATEGORIES = ["adult", "child", "infant", "elderly"]
 STOCKPILE_ITEMS = []
 
-# Path for docker if `data` is copied or mounted to `/app/data`
+# Dockerコンテナ内のCSVファイルパス (dataディレクトリが /app/data にマウントまたはコピーされる場合)
 CONTAINER_CSV_PATH = '/app/data/stockpile_items.csv'
 
 def load_stockpile_data():
     global STOCKPILE_ITEMS
     temp_items = []
     
-    # Ensure AGE_CATEGORIES is accessible here if defined globally or passed as argument
-    # For simplicity, assuming AGE_CATEGORIES is global or accessible in this scope.
+    # AGE_CATEGORIES はグローバルに定義されているか、引数として渡されることを想定
 
     try:
         with open(CONTAINER_CSV_PATH, mode='r', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 item = {
-                    "id": row["id"],
-                    "name": row["name"],
-                    "category": row["category"],
-                    "unit": row["unit"],
+                    "id": row["ID"], # CSVヘッダー変更に対応
+                    "name": row["品目名"], # CSVヘッダー変更に対応
+                    "category": row["カテゴリ"], # CSVヘッダー変更に対応
+                    "unit": row["単位"], # CSVヘッダー変更に対応
                 }
-                # Check for qty_family_once first, as it's exclusive of per-person quantities
-                if row.get("qty_family_once") and row["qty_family_once"].strip():
+                # まず family_once の数量を確認 (個人別の数量とは排他的)
+                if row.get("数量_家族あたり") and row["数量_家族あたり"].strip():
                     try:
-                        item["quantity_per_family_once"] = float(row["qty_family_once"])
+                        item["quantity_per_family_once"] = float(row["数量_家族あたり"])
                     except ValueError:
-                        print(f"Warning: Could not parse qty_family_once '{row['qty_family_once']}' for item '{row['id']}' as float. Skipping item.")
-                        continue # Skip this item or handle error appropriately
+                        app.logger.warning(f"警告: アイテム '{row['ID']}' の '数量_家族あたり' ('{row['数量_家族あたり']}') を数値として解析できませんでした。このアイテムをスキップします。")
+                        continue # このアイテムをスキップするか、適切にエラー処理
                 else:
                     item["quantity_per_person_per_day"] = {}
                     has_any_person_qty = False
-                    for cat_key in AGE_CATEGORIES: # e.g. "adult", "child"
-                        col_name = f"qty_{cat_key}" # e.g. "qty_adult"
+                    for cat_key in AGE_CATEGORIES: # 例: "adult", "child"
+                        col_name = f"数量_{cat_key}" # 例: "数量_adult"
                         if row.get(col_name) and row[col_name].strip():
                             try:
                                 item["quantity_per_person_per_day"][cat_key] = float(row[col_name])
                                 has_any_person_qty = True
                             except ValueError:
-                                print(f"Warning: Could not parse {col_name} '{row[col_name]}' for item '{row['id']}' as float. Defaulting to 0 for this category.")
+                                app.logger.warning(f"警告: アイテム '{row['ID']}' の '{col_name}' ('{row[col_name]}') を数値として解析できませんでした。このカテゴリのデフォルト値は0になります。")
                                 item["quantity_per_person_per_day"][cat_key] = 0
                         else:
-                            # Default to 0 if data is missing/blank for a specific age category for a per-person item
+                            # 個人別アイテムで特定の年齢カテゴリのデータが欠落または空白の場合、デフォルトで0とする
                             item["quantity_per_person_per_day"][cat_key] = 0 
                     
-                    # If it wasn't a family_once item, but had no valid per-person quantities, it's ambiguous.
-                    # For now, we'll add it if it had at least one per-person quantity, or it's a family_once item.
-                    # This check might need refinement based on how strictly data must conform.
                     if not has_any_person_qty and not item.get("quantity_per_family_once"):
-                         print(f"Warning: Item '{row['id']}' has no 'qty_family_once' and no valid per-person quantities. It might not be processed correctly in calculations.")
+                         app.logger.warning(f"警告: アイテム '{row['ID']}' には家族向け数量がなく、有効な個人別の数量もありません。計算時に正しく処理されない可能性があります。")
                 
                 temp_items.append(item)
         
         STOCKPILE_ITEMS = temp_items
         if not STOCKPILE_ITEMS:
-            app.logger.warning("Stockpile data is empty after loading CSV. Calculations might yield no results.")
+            app.logger.warning("CSV読み込み後、備蓄データが空です。計算結果が得られない可能性があります。")
         else:
-            app.logger.info(f"Successfully loaded {len(STOCKPILE_ITEMS)} items from {CONTAINER_CSV_PATH}.")
-            # For debugging, print a sample of loaded items
-            # app.logger.debug(f"Sample loaded items: {STOCKPILE_ITEMS[:2]}")
+            app.logger.info(f"{CONTAINER_CSV_PATH} から {len(STOCKPILE_ITEMS)} 件のアイテムを正常に読み込みました。")
+            # デバッグ用に読み込まれたアイテムのサンプルを出力
+            # app.logger.debug(f"読み込みアイテムサンプル: {STOCKPILE_ITEMS[:2]}")
 
     except FileNotFoundError:
-        app.logger.error(f"FATAL: Stockpile CSV file not found at {CONTAINER_CSV_PATH}. Stockpile functionality will be disabled.")
-        STOCKPILE_ITEMS = [] # Ensure it's empty so simulator knows no data
+        app.logger.error(f"致命的エラー: 備蓄CSVファイルが {CONTAINER_CSV_PATH} で見つかりません。備蓄シミュレータ機能は無効になります。")
+        STOCKPILE_ITEMS = [] # シミュレータにデータがないことを知らせるために空にする
     except Exception as e:
-        app.logger.error(f"FATAL: Error loading stockpile CSV from {CONTAINER_CSV_PATH}: {e}. Stockpile functionality will be disabled.")
+        app.logger.error(f"致命的エラー: {CONTAINER_CSV_PATH} からの備蓄CSVファイルの読み込み中にエラーが発生しました: {e}。備蓄シミュレータ機能は無効になります。")
         STOCKPILE_ITEMS = []
 
-# Load data when the module is imported (i.e., when Flask app starts)
+# モジュールインポート時 (Flaskアプリ起動時) にデータを読み込む
 load_stockpile_data()
 
 
 @app.route('/api/stockpile_simulator', methods=['POST'])
 def stockpile_simulator():
-    # Check if STOCKPILE_ITEMS is empty and inform client if so
+    # STOCKPILE_ITEMSが空の場合、クライアントに通知
     if not STOCKPILE_ITEMS:
-        return jsonify({"error": "Stockpile data is not available. Please check server configuration."}), 503
+        return jsonify({"error": "備蓄データが利用できません。サーバーの設定を確認してください。"}), 503
 
     data = request.get_json()
     if not data or 'family_members' not in data:
-        return jsonify({"error": "Missing family_members data"}), 400
+        return jsonify({"error": "家族構成データが見つかりません。"}), 400
 
-    family_members_input = data['family_members'] # e.g., {"adult": 2, "child": 1}
+    family_members_input = data['family_members'] # 例: {"adult": 2, "child": 1}
 
-    # Validate input categories
+    # 入力カテゴリの検証
     for category in family_members_input.keys():
         if category not in AGE_CATEGORIES:
-            return jsonify({"error": f"Invalid family member category: {category}"}), 400
+            return jsonify({"error": f"無効な家族構成カテゴリです: {category}"}), 400
 
     results = []
     total_persons = sum(family_members_input.values())
@@ -124,7 +120,7 @@ def stockpile_simulator():
                 "recommended_quantity": round(daily_total_for_item * 7, 2),
             })
         elif "quantity_per_family_once" in item:
-            if total_persons > 0:
+            if total_persons > 0: # 家族が一人もいない場合は家族向けアイテムも不要
                 results.append({
                     "id": item["id"],
                     "name": item["name"],
@@ -142,33 +138,33 @@ def chat_with_rag():
     global is_processing_chat
     
     if is_processing_chat:
-        return jsonify({"error": "Previous request still processing. Please wait."}), 429 # Too Many Requests
+        return jsonify({"error": "前のリクエストを処理中です。しばらくお待ちください。"}), 429 # Too Many Requests
 
     data = request.get_json()
     if not data or 'question' not in data:
-        return jsonify({"error": "Missing 'question' in request body"}), 400
+        return jsonify({"error": "リクエストボディに 'question' が見つかりません。"}), 400
 
     question = data['question']
     if not question.strip():
-        return jsonify({"error": "Question cannot be empty"}), 400
+        return jsonify({"error": "質問内容は空にできません。"}), 400
 
     is_processing_chat = True
     try:
-        # Call the RAG query function
+        # RAGクエリ関数を呼び出し
         response = query_rag(question)
     except Exception as e:
-        # Log the exception for debugging
-        app.logger.error(f"Error in RAG query: {e}")
-        is_processing_chat = False # Reset state on error
-        return jsonify({"error": "An internal error occurred while processing your question."}), 500
+        # デバッグ用に例外をログに記録
+        app.logger.error(f"RAGクエリでエラーが発生しました: {e}")
+        is_processing_chat = False # エラー時に状態をリセット
+        return jsonify({"error": "質問の処理中に内部エラーが発生しました。"}), 500
     finally:
         is_processing_chat = False
         
     return jsonify(response)
 
 if __name__ == '__main__':
-    # Note: When running with Flask's development server (app.run()), 
-    # and debug=True, the server might reload, potentially re-running initializations.
-    # For production, a WSGI server like Gunicorn would be used.
-    # initialize_rag_components() is already called at module import of rag_logic
+    # 注意: Flask開発サーバー (app.run()) で debug=True の場合、
+    # サーバーがリロードされ、初期化が再実行される可能性があります。
+    # 本番環境ではGunicornのようなWSGIサーバーを使用します。
+    # initialize_rag_components() は rag_logic のモジュールインポート時に既に呼び出されています。
     app.run(debug=True, host='0.0.0.0', port=5001)

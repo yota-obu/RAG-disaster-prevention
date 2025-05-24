@@ -1,119 +1,119 @@
 # 防災対策学習サイト (Disaster Preparedness Learning Site)
 
-This project is a web application designed to help users learn about disaster preparedness. It includes a stockpile simulator to calculate necessary emergency supplies and an AI-powered chat assistant for answering questions related to disaster safety and preparedness based on provided documents.
+このプロジェクトは、ユーザーが防災について学ぶのを支援するために設計されたWebアプリケーションです。必要な非常用備蓄品を計算する「防災備蓄シミュレータ」と、提供されたドキュメントに基づいて防災と安全に関する質問に答えるAI搭載のチャットアシスタント「防災Chat」が含まれています。
 
-## Features
+## 特徴
 
 ### 1. 防災備蓄シミュレータ (Disaster Stockpile Simulator)
-- **User Input:** Allows users to input the number of family members categorized by age groups:
+- **ユーザー入力:** 以下の年齢層で分類された家族の人数をユーザーが入力できます:
     - 成人 (Adult)
     - 子供(中学生以上) (Child - Junior high school and older)
     - 子供 (Child - Younger, elementary school and below)
     - 乳幼児 (Infant)
     - 高齢者 (Elderly)
-- **System Output:** Calculates and displays the necessary stockpile items (food, hygiene products, essentials) required for both a minimum of 3 days and a recommended 7 days. Results are presented in a table, grouped by item category. The data for these calculations is sourced from an external CSV file (`data/stockpile_items.csv`).
+- **システム出力:** 最低3日間分と推奨7日間分の必要な備蓄品（食料、衛生用品、必需品）を計算して表示します。結果は品目カテゴリ別にグループ化され、テーブル形式で表示されます。これらの計算データは、外部CSVファイル (`data/stockpile_items.csv`) から取得されます。
 
 ### 2. 防災Chat (Disaster Chat)
-- **User Input:** Users can ask questions related to disaster preparedness in a chat interface (e.g., "What should I do during an earthquake?").
-- **System Output:** An AI assistant, powered by a RAG (Retrieval Augmented Generation) system using Google's Gemini-Flash model via Langchain, answers questions. The AI's knowledge is based on information extracted from PDF documents provided by the user/administrator in the `documents/` folder. When providing an answer, the chat also lists the source documents (filename and page number) that contributed to the response.
+- **ユーザー入力:** ユーザーはチャットインターフェースで防災に関する質問をすることができます（例: 「地震の時はどうすればいいですか？」）。
+- **システム出力:** Langchainを介してGoogleのGemini-Flashモデルを使用するRAG (Retrieval Augmented Generation) システムを搭載したAIアシスタントが質問に答えます。AIの知識は、ユーザー/管理者が `documents/` フォルダに提供したPDFドキュメントから抽出された情報に基づいています。回答を提供する際、チャットは回答に貢献したソースドキュメント（ファイル名とページ番号）もリスト表示します。
 
-## Tech Stack
+## 技術スタック
 
-- **Backend:**
-    - Language/Framework: Python (Flask)
-    - Key Libraries: Langchain (v0.3.x for RAG), langchain_community, langchain_google_genai, pypdf, faiss-cpu, python-dotenv, pytest
-- **Frontend:**
-    - Library/Framework: React (using Create React App structure)
-    - Key Libraries: react-router-dom
-- **AI Model:** Google Gemini-Flash (accessed via `langchain_google_genai`)
-- **Data Storage:**
-    - Stockpile Items Data: Managed via a CSV file (`disaster_prep_site/data/stockpile_items.csv`).
-    - RAG Vector Store: FAISS (index stored in `disaster_prep_site/backend/vectorstore_faiss/`).
-- **Containerization:** Docker, Docker Compose
-- **Web Server (Frontend):** Nginx (serving the React build and proxying API requests in the Docker setup)
+- **バックエンド:**
+    - 言語/フレームワーク: Python (Flask)
+    - 主要ライブラリ: Langchain (RAG用 v0.3.x), langchain_community, langchain_google_genai, pypdf, faiss-cpu, python-dotenv, pytest
+- **フロントエンド:**
+    - ライブラリ/フレームワーク: React (Create React App構成)
+    - 主要ライブラリ: react-router-dom
+- **AIモデル:** Google Gemini-Flash (`langchain_google_genai`経由でアクセス)
+- **データストレージ:**
+    - 備蓄品データ: CSVファイル (`disaster_prep_site/data/stockpile_items.csv`) で管理。
+    - RAGベクターストア: FAISS (インデックスは `disaster_prep_site/backend/vectorstore_faiss/` に保存)。
+- **コンテナ化:** Docker, Docker Compose
+- **Webサーバー (フロントエンド):** Nginx (Dockerセットアップ内でReactビルドを提供し、APIリクエストをプロキシ)
 
-## Prerequisites
+## 前提条件
 
-- **Docker and Docker Compose:** Must be installed on your system. Visit the [official Docker website](https://www.docker.com/get-started) for installation instructions.
-- **Google API Key:** A Google API Key with access to the Gemini API (specifically, the "Generative Language API") is required for the Disaster Chat feature to function. You can obtain this from the [Google Cloud Console](https://console.cloud.google.com/).
+- **DockerとDocker Compose:** システムにインストールされている必要があります。インストール手順については、[Docker公式サイト](https://www.docker.com/get-started) を参照してください。
+- **Google APIキー:** 「防災Chat」機能が動作するためには、Gemini API（具体的には "Generative Language API"）へのアクセス権を持つGoogle APIキーが必要です。[Google Cloud Console](https://console.cloud.google.com/) から取得できます。
 
-## Setup and Running the Application
+## セットアップとアプリケーションの実行
 
-1.  **Clone the Repository / Prepare Files:**
-    - If you've cloned this repository, you're all set.
-    - Otherwise, ensure all project files are present in a root directory (e.g., `disaster_prep_site/`).
+1.  **リポジトリのクローン / ファイルの準備:**
+    - このリポジトリをクローンした場合は、準備完了です。
+    - そうでない場合は、すべてのプロジェクトファイルがルートディレクトリ（例: `disaster_prep_site/`）に存在することを確認してください。
 
-2.  **Configure Environment Variables (Google API Key):**
-    - Navigate to the `disaster_prep_site/backend/` directory.
-    - Create a file named `.env`. You can copy `backend/.env.example` if it exists, or create a new file.
-    - Add your Google API Key to the `.env` file. It should look like this:
+2.  **環境変数の設定 (Google APIキー):**
+    - `disaster_prep_site/backend/` ディレクトリに移動します。
+    - `.env` という名前のファイルを作成します。存在すれば `backend/.env.example` をコピーするか、新しいファイルを作成します。
+    - `.env` ファイルにGoogle APIキーを追加します。以下のようになるはずです:
       ```env
       GOOGLE_API_KEY="YOUR_ACTUAL_GOOGLE_API_KEY_HERE"
       ```
-    - **Important:** Replace `"YOUR_ACTUAL_GOOGLE_API_KEY_HERE"` with your real Google API Key. Without a valid API key, the Disaster Chat feature will not initialize correctly and will return an error message.
+    - **重要:** `"YOUR_ACTUAL_GOOGLE_API_KEY_HERE"` を実際のGoogle APIキーに置き換えてください。有効なAPIキーがないと、「防災Chat」機能は正しく初期化されず、エラーメッセージが返されます。
 
-3.  **Prepare Stockpile Data (Optional Customization):**
-    - The list of stockpile items and their recommended quantities is managed in `disaster_prep_site/data/stockpile_items.csv`.
-    - You can edit this CSV file to add, remove, or modify items to suit different regional needs or updated guidelines. The backend will load this data on startup.
+3.  **備蓄データの準備 (任意カスタマイズ):**
+    - 備蓄品目リストと推奨数量は `disaster_prep_site/data/stockpile_items.csv` で管理されています。
+    - このCSVファイルを編集して、さまざまな地域のニーズや更新されたガイドラインに合わせて品目を追加、削除、または変更できます。バックエンドは起動時にこのデータを読み込みます。
 
-4.  **Add PDF Documents for RAG System:**
-    - Place any PDF documents that the Disaster Chat should use as its knowledge base into the `disaster_prep_site/documents/` folder. These could be official government disaster preparedness guides, local emergency plans, etc.
-    - **Note on First Run / Document Changes:**
-        - When the application starts for the first time, or if the `disaster_prep_site/backend/vectorstore_faiss/` directory is empty or deleted, the RAG system will process all PDFs in the `documents/` folder to build its vector store.
-        - This processing can take some time, depending on the number and size of the PDF documents.
-        - Subsequent startups will be much faster as they will load the pre-built vector store from `backend/vectorstore_faiss/`.
-        - If you add, remove, or change PDF documents in the `documents/` folder, you should delete the `backend/vectorstore_faiss/` directory to force the system to rebuild the vector store with the updated content on the next run.
+4.  **RAGシステム用PDFドキュメントの追加:**
+    - 「防災Chat」が知識ベースとして使用するPDFドキュメントを `disaster_prep_site/documents/` フォルダに配置します。これらは、公式の政府防災ガイド、地域の緊急時計画などです。
+    - **初回実行時 / ドキュメント変更時の注意:**
+        - アプリケーションを初めて起動したとき、または `disaster_prep_site/backend/vectorstore_faiss/` ディレクトリが空または削除されている場合、RAGシステムは `documents/` フォルダ内のすべてのPDFを処理してベクターストアを構築します。
+        - この処理は、PDFドキュメントの数とサイズによって時間がかかることがあります。
+        - 以降の起動は、`backend/vectorstore_faiss/` から事前に構築されたベクターストアを読み込むため、大幅に高速になります。
+        - `documents/` フォルダ内のPDFドキュメントを追加、削除、または変更した場合は、`backend/vectorstore_faiss/` ディレクトリを削除して、次回実行時に更新されたコンテンツでベクターストアを再構築するようにしてください。
 
-5.  **Build and Run with Docker Compose:**
-    - Open a terminal or command prompt.
-    - Navigate to the root directory of the project (i.e., the `disaster_prep_site/` directory).
-    - Run the following command:
+5.  **Docker Composeを使用したビルドと実行:**
+    - ターミナルまたはコマンドプロンプトを開きます。
+    - プロジェクトのルートディレクトリ（つまり `disaster_prep_site/` ディレクトリ）に移動します。
+    - 次のコマンドを実行します:
       ```bash
       docker-compose up --build
       ```
-    - This command will:
-        - Build the Docker images for the backend and frontend services (if they don't exist or if Dockerfiles have changed).
-        - Start the containers for both services.
-    - Wait for the build process and service startup to complete. You will see logs from both services in your terminal.
+    - このコマンドは次の処理を行います:
+        - バックエンドおよびフロントエンドサービスのDockerイメージをビルドします（存在しない場合、またはDockerfileが変更された場合）。
+        - 両方のサービスのコンテナを開始します。
+    - ビルドプロセスとサービス起動が完了するまで待ちます。ターミナルに両方のサービスからのログが表示されます。
 
-6.  **Accessing the Application:**
-    - **Frontend Application:** Open your web browser and navigate to `http://localhost:3000`.
-    - **Backend API Endpoints (Optional, for direct testing with tools like Postman or curl):**
-        - Stockpile Simulator: `POST http://localhost:5001/api/stockpile_simulator`
-          - Example Payload: `{"family_members": {"adult": 2, "child": 1}}`
-        - Disaster Chat: `POST http://localhost:5001/api/chat`
-          - Example Payload: `{"question": "What to do in an earthquake?"}`
+6.  **アプリケーションへのアクセス:**
+    - **フロントエンドアプリケーション:** Webブラウザを開き、`http://localhost:3000` にアクセスします。
+    - **バックエンドAPIエンドポイント (任意、Postmanやcurlなどのツールでの直接テスト用):**
+        - 防災備蓄シミュレータ: `POST http://localhost:5001/api/stockpile_simulator`
+          - ペイロード例: `{"family_members": {"adult": 2, "child": 1}}`
+        - 防災Chat: `POST http://localhost:5001/api/chat`
+          - ペイロード例: `{"question": "What to do in an earthquake?"}`
 
-## Development Notes
+## 開発ノート
 
-### Running Tests
-To run the backend unit tests, ensure the Docker services are running (or at least the backend service if testing in isolation with a separate command). Then, execute the following command in a new terminal from the project root directory:
+### テストの実行
+バックエンドのユニットテストを実行するには、Dockerサービスが実行されていることを確認します（または、分離してテストする場合は少なくともバックエンドサービスが実行されていること）。次に、プロジェクトのルートディレクトリから新しいターミナルで次のコマンドを実行します:
 ```bash
 docker-compose exec backend pytest -v
 ```
-This command runs `pytest` inside the `backend` service container. The `-v` flag provides verbose output. The tests are located in `disaster_prep_site/backend/tests/`.
+このコマンドは、`backend`サービスコンテナ内で`pytest`を実行します。`-v`フラグは詳細な出力を提供します。テストは`disaster_prep_site/backend/tests/`にあります。
 
-### Project Structure
-A brief overview of the main directories:
+### プロジェクト構成
+主要ディレクトリの概要:
 - `disaster_prep_site/`
-    - `backend/`: Contains the Python Flask backend application.
-        - `app/`: Core application logic, including `main.py` (API endpoints) and `rag_logic.py`.
-        - `tests/`: Unit tests for the backend (e.g., `test_stockpile_simulator.py`, `test_rag_logic.py`).
-        - `vectorstore_faiss/`: Stores the FAISS vector index for the RAG system. This is created automatically if it doesn't exist and `documents/` are present.
-        - `.env`: Stores the `GOOGLE_API_KEY` (you need to create this file).
-        - `Dockerfile`: Instructions for building the backend Docker image.
-        - `requirements.txt`: Python dependencies.
-    - `frontend/`: Contains the React frontend application.
-        - `public/`: Static assets and `index.html`.
-        - `src/`: React components, pages, CSS, and application logic.
-        - `nginx.conf`: Nginx configuration used within the frontend Docker container to serve the React app and proxy API requests.
-        - `Dockerfile`: Instructions for building the frontend Docker image (multi-stage build).
-        - `package.json`: Frontend dependencies and scripts.
-    - `data/`: Contains external data files.
-        - `stockpile_items.csv`: CSV file defining items for the stockpile simulator.
-    - `documents/`: Directory for storing PDF documents that the RAG system will use as its knowledge base.
-    - `docker-compose.yml`: Docker Compose file to define and run the multi-container application (backend and frontend).
-    - `README.md`: This file, providing project documentation.
+    - `backend/`: Python Flaskバックエンドアプリケーションを格納します。
+        - `app/`: `main.py` (APIエンドポイント) や `rag_logic.py` を含むコアアプリケーションロジック。
+        - `tests/`: バックエンドのユニットテスト (例: `test_stockpile_simulator.py`, `test_rag_logic.py`)。
+        - `vectorstore_faiss/`: RAGシステム用のFAISSベクターインデックスを格納します。これは、存在せず `documents/` が存在する場合に自動的に作成されます。
+        - `.env`: `GOOGLE_API_KEY` を格納します（このファイルを作成する必要があります）。
+        - `Dockerfile`: バックエンドDockerイメージをビルドするための指示。
+        - `requirements.txt`: Pythonの依存関係。
+    - `frontend/`: Reactフロントエンドアプリケーションを格納します。
+        - `public/`: 静的アセットと`index.html`。
+        - `src/`: Reactコンポーネント、ページ、CSS、およびアプリケーションロジック。
+        - `nginx.conf`: フロントエンドDockerコンテナ内でReactアプリを提供し、APIリクエストをプロキシするために使用されるNginx設定。
+        - `Dockerfile`: フロントエンドDockerイメージをビルドするための指示（マルチステージビルド）。
+        - `package.json`: フロントエンドの依存関係とスクリプト。
+    - `data/`: 外部データファイルを格納します。
+        - `stockpile_items.csv`: 防災備蓄シミュレータ用の品目を定義するCSVファイル。
+    - `documents/`: RAGシステムが知識ベースとして使用するPDFドキュメントを格納するディレクトリ。
+    - `docker-compose.yml`: マルチコンテナアプリケーション（バックエンドとフロントエンド）を定義および実行するためのDocker Composeファイル。
+    - `README.md`: このファイル、プロジェクトのドキュメントを提供します。
 
 ---
-This README provides a comprehensive guide for setting up, running, and understanding the Disaster Preparedness Learning Site.
+このREADMEは、「防災対策学習サイト」のセットアップ、実行、および理解のための包括的なガイドを提供します。

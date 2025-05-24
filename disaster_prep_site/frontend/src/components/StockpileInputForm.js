@@ -3,11 +3,11 @@ import './StockpileInputForm.css';
 
 function StockpileInputForm({ familyMembers, onInputChange, onSubmit, isLoading }) {
   const categories = [
-    { key: 'adult', label: '成人 (Adult)' },
-    { key: 'child_teen', label: '子供(中学生以上) (Child - Teenager)' },
-    { key: 'child_younger', label: '子供 (Child - Younger)' },
-    { key: 'infant', label: '乳幼児 (Infant)' },
-    { key: 'elderly', label: '高齢者 (Elderly)' },
+    { key: 'adult', label: '成人' },
+    { key: 'child_teen', label: '子供(中学生以上)' },
+    { key: 'child_younger', label: '子供' },
+    { key: 'infant', label: '乳幼児' },
+    { key: 'elderly', label: '高齢者' },
   ];
 
   return (
