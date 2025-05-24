@@ -1,0 +1,33 @@
+/* Styles for StockpileSimulatorPage */
+.stockpile-simulator-page {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  font-family: sans-serif;
+}
+
+.stockpile-simulator-page h1 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.loading-message, .error-message {
+  text-align: center;
+  padding: 15px;
+  margin-top: 20px;
+  border-radius: 4px;
+}
+
+.loading-message {
+  color: #007bff;
+}
+
+.error-message {
+  color: #D8000C; /* Red for errors */
+  background-color: #FFD2D2; /* Light red background */
+  border: 1px solid #D8000C;
+}

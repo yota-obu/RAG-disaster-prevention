@@ -1,0 +1,42 @@
+/* Styles for ChatInput */
+.chat-input-form {
+  display: flex;
+  padding: 10px;
+  border-top: 1px solid #ddd;
+  background-color: #f0f0f0;
+}
+
+.chat-input-form input[type="text"] {
+  flex-grow: 1;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 20px; /* Rounded input field */
+  margin-right: 10px;
+  font-size: 1rem;
+}
+
+.chat-input-form input[type="text"]:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.chat-input-form button[type="submit"] {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 20px; /* Rounded button */
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.chat-input-form button[type="submit"]:hover {
+  background-color: #0056b3;
+}
+
+.chat-input-form button[type="submit"]:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}

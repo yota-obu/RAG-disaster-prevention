@@ -1,0 +1,8 @@
+Flask
+langchain~=0.3.0
+langchain_community
+langchain_google_genai
+pypdf
+faiss-cpu
+python-dotenv
+pytest

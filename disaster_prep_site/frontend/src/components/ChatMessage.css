@@ -1,0 +1,91 @@
+/* Styles for ChatMessage */
+.chat-message-row {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.row-user {
+  justify-content: flex-end; /* User messages on the right */
+}
+
+.row-ai, .row-error { /* Error messages can also be aligned left like AI messages */
+  justify-content: flex-start; /* AI/Error messages on the left */
+}
+
+.message-bubble {
+  max-width: 70%;
+  padding: 10px 15px;
+  border-radius: 18px;
+  word-wrap: break-word; /* Break long words */
+  line-height: 1.4;
+}
+
+.user-message {
+  background-color: #007bff;
+  color: white;
+  border-bottom-right-radius: 5px; /* Give it a tail */
+}
+
+.ai-message {
+  background-color: #e9ecef;
+  color: #333;
+  border-bottom-left-radius: 5px; /* Give it a tail */
+}
+
+.error-message {
+  background-color: #f8d7da; /* Light red for errors */
+  color: #721c24; /* Dark red text */
+  border: 1px solid #f5c6cb;
+  border-bottom-left-radius: 5px;
+  position: relative; /* For error indicator positioning */
+}
+
+.message-text {
+  margin-bottom: 8px; /* Space before sources if any */
+}
+
+.message-sources {
+  font-size: 0.85em;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0,0,0,0.1); /* Subtle separator for sources */
+}
+.ai-message .message-sources { /* Ensure sources in AI messages have appropriate text color */
+    color: #555;
+}
+.user-message .message-sources { /* User messages shouldn't have sources, but just in case */
+    color: #f0f0f0;
+}
+
+
+.message-sources strong {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.message-sources ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.message-sources li {
+  padding: 2px 0;
+  font-size: 0.9em;
+}
+
+.error-indicator {
+  position: absolute;
+  top: -5px; /* Adjust as needed */
+  right: -5px; /* Adjust as needed */
+  background-color: red;
+  color: white;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8em;
+  font-weight: bold;
+}

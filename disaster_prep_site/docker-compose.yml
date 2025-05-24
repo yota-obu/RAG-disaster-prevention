@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "5001:5001"
+    # Volumes can be useful for development to reflect code changes without rebuilding.
+    # For this task, we are focusing on a production-like setup, so code is copied in Dockerfile.
+    # Volumes can be useful for development to reflect code changes without rebuilding.
+    # For this task, we are focusing on a production-like setup, so code is copied in Dockerfile.
+    # However, for the data CSV, we mount it to allow changes without rebuilding the image.
+    volumes:
+      # - ./backend/app:/app/app # Example: for live backend code reload
+      # - ./backend/documents:/app/documents # Example: if documents are updated frequently
+      # - ./backend/vectorstore_faiss:/app/vectorstore_faiss # Example: if vector store is managed outside image
+      - ./data:/app/data # Mounts the project's data directory to /app/data in the container
+    env_file:
+      - ./backend/.env # Makes environment variables from the .env file available to the container
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80" # Map host port 3000 to container port 80 (Nginx default)
+    depends_on:
+      - backend # Ensures backend is available before frontend (useful for API calls)
+    restart: unless-stopped
